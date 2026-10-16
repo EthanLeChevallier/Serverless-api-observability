@@ -157,6 +157,15 @@ check_duration = meter.create_histogram(
     unit="s",
     description="Duration of API health checks",
 )
+check_status = meter.create_gauge(
+    "api_check_status",
+    description="Most recent API check result: 1 for healthy, 0 otherwise",
+)
+check_last_run = meter.create_gauge(
+    "api_check_last_run_timestamp_seconds",
+    unit="s",
+    description="Unix timestamp of the most recent API check",
+)
 
 
 async def _check_api(
@@ -204,6 +213,14 @@ async def _check_api(
                 "result": result,
                 "status_code": str(status_code) if status_code is not None else "none",
             },
+        )
+        check_status.set(
+            1 if healthy else 0,
+            {"api_target": api_name},
+        )
+        check_last_run.set(
+            time.time(),
+            {"api_target": api_name},
         )
 
         log_data = {

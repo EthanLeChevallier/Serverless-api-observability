@@ -61,10 +61,45 @@ def test_check_api_reports_success() -> None:
     assert result["latency_ms"] >= 0
 
 
+def test_check_api_updates_status_and_last_run_gauges(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    status_points: list[tuple[int, dict[str, str]]] = []
+    last_run_points: list[tuple[float, dict[str, str]]] = []
+    monkeypatch.setattr(
+        main.check_status,
+        "set",
+        lambda value, attributes: status_points.append((value, attributes)),
+    )
+    monkeypatch.setattr(
+        main.check_last_run,
+        "set",
+        lambda value, attributes: last_run_points.append((value, attributes)),
+    )
+
+    asyncio.run(
+        main._check_api(
+            StubClient(response=StubResponse(200)),
+            asyncio.Semaphore(1),
+            "https://api.example.test/health",
+        )
+    )
+
+    assert status_points == [(1, {"api_target": "api.example.test"})]
+    assert len(last_run_points) == 1
+    assert last_run_points[0][0] > 0
+    assert last_run_points[0][1] == {"api_target": "api.example.test"}
+
+
 def test_latency_histogram_has_boundaries_around_alert_threshold() -> None:
     assert 0.5 in main.LATENCY_BUCKETS_SECONDS
     assert 0.3 in main.LATENCY_BUCKETS_SECONDS
     assert 0.75 in main.LATENCY_BUCKETS_SECONDS
+
+
+def test_status_metrics_are_gauges() -> None:
+    assert main.check_status.name == "api_check_status"
+    assert main.check_last_run.name == "api_check_last_run_timestamp_seconds"
 
 
 def test_check_api_reports_unhealthy_http_status() -> None:

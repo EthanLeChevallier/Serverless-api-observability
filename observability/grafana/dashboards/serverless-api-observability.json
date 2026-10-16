@@ -2,7 +2,7 @@
   "uid": "serverless-api-observability",
   "title": "Serverless API Observability (Local)",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": {
     "from": "now-1h",
@@ -12,6 +12,7 @@
     {
       "id": 1,
       "title": "API latency quantiles (seconds)",
+      "description": "p50, p95 and p99 estimated from explicit histogram buckets. The red line marks the 500 ms alert threshold.",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -22,6 +23,30 @@
         "w": 12,
         "x": 0,
         "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
       },
       "targets": [
         {
@@ -65,6 +90,146 @@
     },
     {
       "id": 3,
+      "title": "Current API status",
+      "description": "Latest result per target: UP (1) or DOWN (0).",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "api_check_status",
+          "instant": true,
+          "legendFormat": "{{api_target}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Time since last check",
+      "description": "A rising value can indicate that the monitor stopped reporting.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - api_check_last_run_timestamp_seconds",
+          "instant": true,
+          "legendFormat": "{{api_target}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
       "title": "Healthy checks (%) — 15m",
       "type": "timeseries",
       "datasource": {
@@ -75,7 +240,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 15
       },
       "fieldConfig": {
         "defaults": {
@@ -94,7 +259,7 @@
       ]
     },
     {
-      "id": 4,
+      "id": 6,
       "title": "HTTP response codes — checks/min",
       "type": "timeseries",
       "datasource": {
@@ -105,7 +270,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 15
       },
       "fieldConfig": {
         "defaults": {
@@ -122,7 +287,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 7,
       "title": "Average latency — 15m (seconds)",
       "type": "timeseries",
       "datasource": {
@@ -133,7 +298,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 23
       },
       "targets": [
         {
@@ -144,7 +309,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 8,
       "title": "API health-check logs",
       "type": "logs",
       "datasource": {
@@ -155,7 +320,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "targets": [
         {
@@ -167,7 +332,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 9,
       "title": "Recent traces",
       "type": "traces",
       "datasource": {
@@ -178,7 +343,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 41
       },
       "targets": [
         {
