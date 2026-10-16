@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Serverless API Observability
+    orgId: 1
+    folder: Serverless API Observability
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

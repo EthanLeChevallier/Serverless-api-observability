@@ -1,0 +1,192 @@
+{
+  "uid": "serverless-api-observability",
+  "title": "Serverless API Observability (Local)",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "API latency quantiles (seconds)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, api_target) (rate(api_check_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{api_target}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le, api_target) (rate(api_check_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 {{api_target}}"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, api_target) (rate(api_check_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 {{api_target}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "API check rate",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (api_target, result) (rate(api_check_requests_total[5m]))",
+          "legendFormat": "{{api_target}} - {{result}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Healthy checks (%) — 15m",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum by (api_target) (rate(api_check_requests_total{result=\"healthy\"}[15m])) / sum by (api_target) (rate(api_check_requests_total[15m]))",
+          "legendFormat": "{{api_target}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "HTTP response codes — checks/min",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqpm"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "60 * sum by (api_target, status_code) (rate(api_check_requests_total[15m]))",
+          "legendFormat": "{{api_target}} — HTTP {{status_code}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Average latency — 15m (seconds)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (api_target) (rate(api_check_duration_seconds_sum[15m])) / sum by (api_target) (rate(api_check_duration_seconds_count[15m]))",
+          "legendFormat": "{{api_target}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "API health-check logs",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"serverless-api-observability\"}",
+          "queryType": "range",
+          "maxLines": 100
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Recent traces",
+      "type": "traces",
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ resource.service.name = \"serverless-api-observability\" }"
+        }
+      ]
+    }
+  ]
+}
